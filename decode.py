@@ -37,7 +37,11 @@ def crc_remainder(input_bitstring, polynomial_bitstring):
             input_padded_array[cur_shift + i] = str(int(polynomial_bitstring[i] != input_padded_array[cur_shift + i]))
     return ''.join(input_padded_array)[len_input:]
 
-def extractPackets(e):
+def closePipe(): 
+    print('pipe closed') 
+    exit(0)
+
+def extractPackets(e,infile):
     chunk_size = 16
     iter = 0
     fullStr=""
@@ -45,41 +49,42 @@ def extractPackets(e):
     fullMsg = bytes()
     
     #READ IN AS A STRING
-    with open(sys.argv[1], 'r') as infile:
-        scheme = ''
-        fullStr = ''
-        errors=0
-        numPackets = 0
-        while True:
-            chunk = infile.read(chunk_size)
-            header = chunk[0:2]
-            scheme = header[0]
-            data = chunk[2:13]
-            crcRem = chunk[13:16]
-            numPackets += 1
+    scheme = ''
+    fullStr = ''
+    errors=0
+    numPackets = 0
+    while True:
+        chunk = infile.read(chunk_size)
+        if chunk == '':
+            closePipe()
+        header = chunk[0:2]
+        scheme = header[0]
+        data = chunk[2:13]
+        crcRem = chunk[13:16]
+        numPackets += 1
 
-            # if tail bit is set, break and treat last packet as decimal number 
-            if header[1] == '1': 
-                break 
+        # if tail bit is set, break and treat last packet as decimal number 
+        if header[1] == '1': 
+            break 
 
-            # basic error checking on header+data segments 
-            if not crc_check((header+data),poly,crcRem): 
-                print("Error detected")
-                errors += 1 
+        # basic error checking on header+data segments 
+        if not crc_check((header+data),poly,crcRem): 
+            print("Error detected")
+            errors += 1 
 
-            if not chunk: break
-            #print(chunk[2:])
-            fullStr = fullStr + data
+        if not chunk: break
+        #print(chunk[2:])
+        fullStr = fullStr + data
 
-        # convert data segment from last packet to decimal number 
-        padLen = int(data,2)
-        fullStr = fullStr[:(-1)*padLen] 
+    # convert data segment from last packet to decimal number 
+    padLen = int(data,2)
+    fullStr = fullStr[:(-1)*padLen] 
 
-        # calculate bit error rate 
-        bitErrRate = 0.0 
-        if errors > 0: 
-            bitErrRate = float(errors)/(numPackets*16)
-        print('Bit error rate: ', bitErrRate)
+    # calculate bit error rate 
+    bitErrRate = 0.0 
+    if errors > 0: 
+        bitErrRate = float(errors)/(numPackets*16)
+    print('Bit error rate: ', bitErrRate)
 
 
     #INITIALIZE SIZE OF THE ARRAY
@@ -113,6 +118,7 @@ def extractPackets(e):
     
     return final
 
-
-x = ""
-extractPackets(x)
+with open(sys.argv[1], 'r') as fin:
+    x = ""
+    while True:
+        extractPackets(x,fin)
