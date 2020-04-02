@@ -7,35 +7,42 @@ decoding = {
         "Base64" : '1'
         }
 
-poly = '1011' 
+DATA_LEN = 10
+R = 4 
 
-'''
-returns True there were no errors in the data, False if at least 1 error was detected
-'''
-def crc_check(input_bitstring, polynomial_bitstring, check_value):
-    polynomial_bitstring = polynomial_bitstring.lstrip('0')
-    len_input = len(input_bitstring)
-    initial_padding = check_value
-    input_padded_array = list(input_bitstring + initial_padding)
-    while '1' in input_padded_array[:len_input]:
-        cur_shift = input_padded_array.index('1')
-        for i in range(len(polynomial_bitstring)):
-            input_padded_array[cur_shift + i] = str(int(polynomial_bitstring[i] != input_padded_array[cur_shift + i]))
-    return ('1' not in ''.join(input_padded_array)[len_input:])
+def detectError(arr, nr):
+    n = len(arr)
+    res = 0
 
-'''
-calculates the crc remainder given an input bit string with a three bit '0' pad and 
-a modulo polynomial
-'''
-def crc_remainder(input_bitstring, polynomial_bitstring):
-    polynomial_bitstring = polynomial_bitstring.lstrip('0')
-    len_input = len(input_bitstring)-3
-    input_padded_array = list(input_bitstring)
-    while '1' in input_padded_array[:len_input]:
-        cur_shift = input_padded_array.index('1')
-        for i in range(len(polynomial_bitstring)):
-            input_padded_array[cur_shift + i] = str(int(polynomial_bitstring[i] != input_padded_array[cur_shift + i]))
-    return ''.join(input_padded_array)[len_input:]
+    for i in range(nr):
+      val = 0
+      for j in range(1, n + 1):
+        if(j & (2**i) == (2**i)):
+          val = val ^ int(arr[-1 * j])
+
+      res = res + val*(10**i)
+
+    return int(str(res), 2)
+
+def removeRedundantBits(arr, r):
+    tmp = arr[::-1]
+    res = tmp[2] + tmp[4:7] + tmp[8:]
+
+    return res[::-1]
+
+def correctError(arr, error): 
+  if error == 0: 
+    return arr,0
+
+  tmp = list(arr[::-1])
+  if tmp[error-1] == '1': 
+    tmp[error-1] = '0'
+  else: 
+    tmp[error-1] = '1'
+
+  res = ''.join(tmp[::-1])
+  return res,1
+		
 
 def closePipe(): 
     print('pipe closed') 
@@ -59,21 +66,20 @@ def extractPackets(e,infile):
             closePipe()
         header = chunk[0:2]
         scheme = header[0]
-        data = chunk[2:13]
-        crcRem = chunk[13:16]
+        dataSeg = chunk[2:]
         numPackets += 1
+
+
+        # basic error checking on header+data segments 
+        errorPos = detectError(dataSeg,R)
+        data,numErrors = correctError(dataSeg,errorPos)
+        errors += numErrors
+        data = removeRedundantBits(data,R)
 
         # if tail bit is set, break and treat last packet as decimal number 
         if header[1] == '1': 
             break 
 
-        # basic error checking on header+data segments 
-        if not crc_check((header+data),poly,crcRem): 
-            print("Error detected")
-            errors += 1 
-
-        if not chunk: break
-        #print(chunk[2:])
         fullStr = fullStr + data
 
     # convert data segment from last packet to decimal number 
@@ -85,6 +91,7 @@ def extractPackets(e,infile):
     if errors > 0: 
         bitErrRate = float(errors)/(numPackets*16)
     print('Bit error rate: ', bitErrRate)
+    errors = 0
 
 
     #INITIALIZE SIZE OF THE ARRAY
