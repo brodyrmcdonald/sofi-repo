@@ -1,47 +1,77 @@
 from tkinter import *
 import os 
+from multiprocessing import Event,Process,Pipe
 
-root = Tk()
-root.title('Simulator')
 
 if len(sys.argv) != 3: 
-  print('Usage: ')
-  print('python3 simulator.py [input_pipe] [output_pipe]')
-  exit(1)
+    print('Usage: ')
+    print('python3 simulator.py [input_pipe] [output_pipe]')
+    exit(1)
+
+# reads from bash pipe and writes to python Pipe 
+# from which the GUI will read 
+def reader(inPipe,pipe,stop): 
+    while not stop.is_set():
+        txt = inPipe.read(16)
+        pipe.send(txt)
 
 # function to update bits to send box
-def updateBitBufferBox(textBox,text,line): 
-  lineNo = str(line) 
+def updateBitBufferBox(textBox,text): 
+    textBox.configure(state='normal') 
+    textBox.insert(END, text)
+    textBox.configure(state='disabled')
 
-  textBox.configure(state='normal') 
-  textBox.delete(lineNo+'.0', lineNo+'.end')
-  textBox.insert(END, text)
-  textBox.configure(state='disabled')
+def clearBitBufferBox(textBox): 
+    textBox.delete('1.0','1.end')
 
-# gui stuff 
-# make title frame
-topframe = Frame(root)
-topframe.pack(side=TOP)
+class updatingGUI(Frame): 
+    def __init__(self,parent,inPipe,outPipe): 
+        Frame.__init__(self,parent)
+        self.parent = parent 
+        self.stop_event = Event()
 
-l = Label(topframe, text='SoFi Simulator')
-l.pack(side=TOP)
+        # python Pipes 
+        self.parent_pipe,self.child_pipe = Pipe()
 
-# make current buffer frame
-currentBuffer = Frame(root,padx=10,pady=5)
-currentBuffer.pack(side=TOP)
+        # make title frame
+        self.topframe = Frame(root)
+        self.topframe.pack(side=TOP)
 
-# label for current buffer box
-label1 = Label(currentBuffer, text='Bits to send')
-label1.pack(side=LEFT)
+        self.l = Label(self.topframe, text='SoFi Simulator')
+        self.l.pack(side=TOP)
 
-# actual test box of cureent buffer
-currentText = Text(currentBuffer, height=1, width=50)
-currentText.pack()
-currentText.configure(state='disabled')
-updateBitBufferBox(currentText, 'Hello',1)
+        # make current buffer frame
+        self.currentBuffer = Frame(self,padx=10,pady=5)
+        self.currentBuffer.pack(side=TOP)
 
-root.mainloop()
+        # label for current buffer box
+        self.label1 = Label(self.currentBuffer, text='Bits to send')
+        self.label1.pack(side=LEFT)
 
+        # actual text box of cureent buffer
+        self.currentText = Text(self.currentBuffer, height=5, width=64)
+        self.currentText.pack()
+        self.currentText.insert(END, 'Waiting...')
+        self.currentText.configure(state='disabled')
+        
+        # process to read from pipe 
+        self.reader = Process(target=reader,
+                args=(inPipe,self.child_pipe,self.stop_event))
+        self.reader.start()
+
+        self.update()
+
+    # update function for the GUI
+    # read from the pipe and write contents to the text box 
+    def update(self): 
+        while self.parent_pipe.poll(): 
+            # grab data from python Pipe 
+            txt = self.parent_pipe.recv()
+
+            #update bits to send box
+            updateBitBufferBox(self.currentText,txt)
+
+        self.parent.after(200,self.update)
 
 
 # set up input and output pipes
@@ -50,16 +80,25 @@ outPath = './' + sys.argv[2]
 
 # make the fifos if they don't already exist
 try: 
-  os.mkfifo(inPath)
-  os.mkfifo(outPath)
+    os.mkfifo(inPath)
+    os.mkfifo(outPath)
 except FileExistsError: 
-  None
+    None
 
 # open a file object on the fifos 
-inPipe = os.open(inPath, os.O_RDWR|os.O_NONBLOCK)
-outPipe = os.open(inPath, os.O_RDWR|os.O_NONBLOCK)
+# inPipe = os.open(inPath, os.O_RDWR|os.O_NONBLOCK)
+outPipe = os.open(outPath, os.O_RDWR|os.O_NONBLOCK)
 
-while True: 
-  text = inPipe.read()
-  updateBitBufferBox(currentText, text, 1)
+inPipe = open(inPath, 'r')
+# outPipe = open(outPath, 'w')
 
+# root for gui 
+root = Tk()
+root.title('Simulator')
+
+# build the gui
+gui = updatingGUI(root,inPipe,outPipe)
+gui.pack()
+
+# run the gui
+root.mainloop()
