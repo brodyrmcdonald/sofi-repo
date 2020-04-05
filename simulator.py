@@ -16,13 +16,24 @@ def reader(inPipe,pipe,stop):
         pipe.send(txt)
 
 # function to update bits to send box
-def updateBitBufferBox(textBox,text): 
+def appendToTextBox(textBox,text): 
     textBox.configure(state='normal') 
     textBox.insert(END, text)
     textBox.configure(state='disabled')
 
-def clearBitBufferBox(textBox): 
+def clearTextBox(textBox):
+    textBox.configure(state='normal')
     textBox.delete('1.0','1.end')
+    textBox.configure(state='disabled')
+
+def nextPacket(bitBuffer,outPipe): 
+    bitBuffer.configure(state='normal')
+    packet = bitBuffer.get('1.0','1.16') 
+    bitBuffer.delete('1.0','1.16')
+    bitBuffer.configure(state='disabled')
+    os.write(outPipe,packet.encode())
+
+
 
 class updatingGUI(Frame): 
     def __init__(self,parent,inPipe,outPipe): 
@@ -48,12 +59,34 @@ class updatingGUI(Frame):
         self.label1 = Label(self.currentBuffer, text='Bits to send')
         self.label1.pack(side=LEFT)
 
-        # actual text box of cureent buffer
+        # actual text box of current buffer
         self.currentText = Text(self.currentBuffer, height=5, width=64)
         self.currentText.pack()
-        self.currentText.insert(END, 'Waiting...')
+        # self.currentText.insert(END, 'Waiting...')
         self.currentText.configure(state='disabled')
-        
+
+        # make user edit frame
+        self.editFrame = Frame(self,padx=10,pady=10)
+        self.editFrame.pack(side=BOTTOM)
+
+        # input box for user edits
+        self.editText = Text(self.editFrame, height=1, width=64)
+        self.editText.pack()
+
+        # create send all button and add to frame
+        self.sendAllButton = Button(self.editFrame, 
+                                    text='Send All',
+                                    padx=5)
+        self.sendAllButton.pack(side=LEFT)
+
+        # create next packet button and add to frame
+        self.nextPacketButton = Button(self.editFrame, 
+                                       text='Next Packet',
+                                       padx=5,
+                                       command=lambda: nextPacket(self.currentText,outPipe))
+        self.nextPacketButton.pack(side=LEFT) 
+
+
         # process to read from pipe 
         self.reader = Process(target=reader,
                 args=(inPipe,self.child_pipe,self.stop_event))
@@ -69,7 +102,7 @@ class updatingGUI(Frame):
             txt = self.parent_pipe.recv()
 
             #update bits to send box
-            updateBitBufferBox(self.currentText,txt)
+            appendToTextBox(self.currentText,txt)
 
         self.parent.after(200,self.update)
 
