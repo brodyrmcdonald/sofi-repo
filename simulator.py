@@ -33,6 +33,13 @@ def nextPacket(bitBuffer,outPipe):
     bitBuffer.configure(state='disabled')
     os.write(outPipe,packet.encode())
 
+def sendAll(bitBuffer,outPipe): 
+    bitBuffer.configure(state='normal')
+    msg = bitBuffer.get('1.0','end-1c')
+    bitBuffer.delete('1.0','end-1c')
+    bitBuffer.configure(state='disabled')
+    os.write(outPipe,msg.encode())
+
 
 
 class updatingGUI(Frame): 
@@ -76,7 +83,8 @@ class updatingGUI(Frame):
         # create send all button and add to frame
         self.sendAllButton = Button(self.editFrame, 
                                     text='Send All',
-                                    padx=5)
+                                    padx=5, 
+                                    command=lambda: sendAll(self.currentText,outPipe))
         self.sendAllButton.pack(side=LEFT)
 
         # create next packet button and add to frame
