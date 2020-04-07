@@ -48,6 +48,8 @@ def sendAll(editText,currentText,outPipe):
 class updatingGUI(Frame): 
     def __init__(self,parent,inPipe,outPipe): 
         Frame.__init__(self,parent)
+        self.inPipe = inPipe
+        self.outPipe = outPipe
         self.parent = parent 
         self.stop_event = Event()
 
@@ -79,24 +81,29 @@ class updatingGUI(Frame):
         self.editFrame = Frame(self,padx=10,pady=10)
         self.editFrame.pack(side=BOTTOM)
 
+        # label for user edits
+        self.label2 = Label(self.editFrame, text='Current Packet')
+        self.label2.pack(side=LEFT)
+
         # input box for user edits
         self.editText = Text(self.editFrame, height=1, width=64)
         self.editText.pack()
 
         # create send all button and add to frame
+        func=lambda: sendAll(self.editText,self.currentText,outPipe)
         self.sendAllButton = Button(self.editFrame, 
                                     text='Send All',
                                     padx=5, 
-                                    command=lambda: sendAll(self.editText,self.currentText,outPipe))
+                                    command=func)        
         self.sendAllButton.pack(side=LEFT)
 
         # create next packet button and add to frame
-        self.nextPacketButton = Button(self.editFrame, 
-                                       text='Next Packet',
-                                       padx=5,
-                                       command=lambda: nextPacket(self.editText,self.currentText,outPipe))
+        func = lambda: nextPacket(self.editText,self.currentText,outPipe)
+        self.nextPacketButton = Button(self.editFrame,
+                                    text='Next Packet',
+                                    padx=5,
+                                    command=func)
         self.nextPacketButton.pack(side=LEFT) 
-
 
         # process to read from pipe 
         self.reader = Process(target=reader,
@@ -104,6 +111,14 @@ class updatingGUI(Frame):
         self.reader.start()
 
         self.update()
+
+    def quit(self): 
+        self.stop_event.set()
+        self.inPipe.close()
+        os.close(self.outPipe)
+        self.reader.terminate()
+        self.parent.destroy()
+
 
     # update function for the GUI
     # read from the pipe and write contents to the text box 
@@ -115,9 +130,11 @@ class updatingGUI(Frame):
             #update bits to send box
             appendToTextBox(self.currentText,txt)
 
-        # editText box is empty and currentText box is not, take 16 chars and put in edit text 
-        if self.editText.compare("end-1c", "==", "1.0") and self.currentText.compare('end-1c','!=','1.0'):
-            # print("the widget is empty")
+        # editText box is empty and currentText box is not, 
+        # take 16 chars and put in edit text 
+        editTextIsEmpty = self.editText.compare("end-1c", "==", "1.0")
+        currentTextNotEmpty  = self.currentText.compare('end-1c','!=','1.0')
+        if  editTextIsEmpty and currentTextNotEmpty:
             # take 16 bits from the currentText box 
             packet = self.currentText.get('1.0','1.16') 
             self.currentText.delete('1.0','1.16')
@@ -128,6 +145,8 @@ class updatingGUI(Frame):
 
         self.parent.after(200,self.update)
 
+def delete(gui): 
+    gui.quit()
 
 # set up input and output pipes
 inPath = './' + sys.argv[1]
@@ -136,16 +155,17 @@ outPath = './' + sys.argv[2]
 # make the fifos if they don't already exist
 try: 
     os.mkfifo(inPath)
+except FileExistsError: 
+    None
+
+try: 
     os.mkfifo(outPath)
 except FileExistsError: 
     None
 
 # open a file object on the fifos 
-# inPipe = os.open(inPath, os.O_RDWR|os.O_NONBLOCK)
 outPipe = os.open(outPath, os.O_RDWR|os.O_NONBLOCK)
-
 inPipe = open(inPath, 'r')
-# outPipe = open(outPath, 'w')
 
 # root for gui 
 root = Tk()
@@ -156,4 +176,5 @@ gui = updatingGUI(root,inPipe,outPipe)
 gui.pack()
 
 # run the gui
+root.protocol("WM_DELETE_WINDOW", lambda:delete(gui))
 root.mainloop()
