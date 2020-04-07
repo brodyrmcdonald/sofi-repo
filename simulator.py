@@ -26,18 +26,21 @@ def clearTextBox(textBox):
     textBox.delete('1.0','1.end')
     textBox.configure(state='disabled')
 
-def nextPacket(bitBuffer,outPipe): 
-    bitBuffer.configure(state='normal')
-    packet = bitBuffer.get('1.0','1.16') 
-    bitBuffer.delete('1.0','1.16')
-    bitBuffer.configure(state='disabled')
+def nextPacket(editText,currentText,outPipe): 
+    packet = editText.get('1.0','end-1c')
+    editText.delete('1.0',END)
+    currentText.configure(state='normal')
+    currentText.delete('1.0','1.16')
+    currentText.configure(state='disabled')
     os.write(outPipe,packet.encode())
 
-def sendAll(bitBuffer,outPipe): 
-    bitBuffer.configure(state='normal')
-    msg = bitBuffer.get('1.0','end-1c')
-    bitBuffer.delete('1.0','end-1c')
-    bitBuffer.configure(state='disabled')
+def sendAll(editText,currentText,outPipe): 
+    currentText.configure(state='normal')
+    msg = currentText.get('1.0','end-1c')
+    currentText.delete('1.0','end-1c')
+    currentText.configure(state='disabled')
+    editText.delete('1.0',END)
+
     os.write(outPipe,msg.encode())
 
 
@@ -84,14 +87,14 @@ class updatingGUI(Frame):
         self.sendAllButton = Button(self.editFrame, 
                                     text='Send All',
                                     padx=5, 
-                                    command=lambda: sendAll(self.currentText,outPipe))
+                                    command=lambda: sendAll(self.editText,self.currentText,outPipe))
         self.sendAllButton.pack(side=LEFT)
 
         # create next packet button and add to frame
         self.nextPacketButton = Button(self.editFrame, 
                                        text='Next Packet',
                                        padx=5,
-                                       command=lambda: nextPacket(self.currentText,outPipe))
+                                       command=lambda: nextPacket(self.editText,self.currentText,outPipe))
         self.nextPacketButton.pack(side=LEFT) 
 
 
@@ -111,6 +114,17 @@ class updatingGUI(Frame):
 
             #update bits to send box
             appendToTextBox(self.currentText,txt)
+
+        # editText box is empty and currentText box is not, take 16 chars and put in edit text 
+        if self.editText.compare("end-1c", "==", "1.0") and self.currentText.compare('end-1c','!=','1.0'):
+            # print("the widget is empty")
+            # take 16 bits from the currentText box 
+            packet = self.currentText.get('1.0','1.16') 
+            self.currentText.delete('1.0','1.16')
+
+            # insert packet into edit text box
+            self.editText.insert(END, packet)
+
 
         self.parent.after(200,self.update)
 
