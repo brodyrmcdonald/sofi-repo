@@ -3,6 +3,7 @@ import io
 import base64
 import binascii
 import sys
+import os
 
 decoding = { 
         "ASCII"  : '0', 
@@ -50,7 +51,10 @@ def closePipe():
     print('pipe closed') 
     exit(0)
 
-def extractPackets(e,infile):
+def extractPackets(e,inpath):
+    # open fd 
+    infile = os.open(inpath, os.O_RDWR)
+
     chunk_size = 16
     iter = 0
     fullStr=""
@@ -63,16 +67,16 @@ def extractPackets(e,infile):
     errors=0
     numPackets = 0
     while True:
-        chunk = infile.read(chunk_size)
+        chunk = os.read(infile,chunk_size)
         if chunk == '':
             closePipe()
         elif len(chunk)!= chunk_size:
             print('Error: packet has missing bits')
-            break
+            continue
                 
-        header = chunk[0:2]
+        header = chunk[0:2].decode('ascii')
         scheme = header[0]
-        dataSeg = chunk[2:]
+        dataSeg = chunk[2:].decode('ascii')
         numPackets += 1
 
 
@@ -135,7 +139,6 @@ def extractPackets(e,infile):
             print( "Error! Too many incorrect bits received")
     return final
 
-with open(sys.argv[1], 'r') as fin:
-    x = ""
-    while True:
-        extractPackets(x,fin)
+x = ""
+while True:
+    extractPackets(x,sys.argv[1])
