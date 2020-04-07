@@ -26,7 +26,7 @@ def clearTextBox(textBox):
     textBox.delete('1.0','1.end')
     textBox.configure(state='disabled')
 
-def nextPacket(editText,currentText,outPipe): 
+def sendPacket(editText,currentText,outPipe): 
     packet = editText.get('1.0','end-1c')
     editText.delete('1.0',END)
     currentText.configure(state='normal')
@@ -42,6 +42,15 @@ def sendAll(editText,currentText,outPipe):
     editText.delete('1.0',END)
 
     os.write(outPipe,msg.encode())
+
+def dropPacket(editText,currentText): 
+    currentText.configure(state='normal')
+    currentText.delete('1.0','1.16')
+    currentText.configure(state='disabled')
+
+    editText.delete('1.0',END)
+    
+
 
 
 
@@ -68,7 +77,7 @@ class updatingGUI(Frame):
         self.currentBuffer.pack(side=TOP)
 
         # label for current buffer box
-        self.label1 = Label(self.currentBuffer, text='Bits to send')
+        self.label1 = Label(self.currentBuffer, text='Packets to send')
         self.label1.pack(side=LEFT)
 
         # actual text box of current buffer
@@ -86,7 +95,7 @@ class updatingGUI(Frame):
         self.label2.pack(side=LEFT)
 
         # input box for user edits
-        self.editText = Text(self.editFrame, height=1, width=64)
+        self.editText = Text(self.editFrame, height=1, width=61)
         self.editText.pack()
 
         # create send all button and add to frame
@@ -97,13 +106,21 @@ class updatingGUI(Frame):
                                     command=func)        
         self.sendAllButton.pack(side=LEFT)
 
-        # create next packet button and add to frame
-        func = lambda: nextPacket(self.editText,self.currentText,outPipe)
+        # create send packet button and add to frame
+        func = lambda: sendPacket(self.editText,self.currentText,outPipe)
         self.nextPacketButton = Button(self.editFrame,
-                                    text='Next Packet',
+                                    text='Send Packet',
                                     padx=5,
                                     command=func)
         self.nextPacketButton.pack(side=LEFT) 
+
+        # create drop packet button 
+        func = lambda: dropPacket(self.editText,self.currentText)
+        self.dropPacketButton = Button(self.editFrame, 
+                                       text='Drop Packet',
+                                       padx=5,
+                                       command=func)
+        self.dropPacketButton.pack(side=LEFT)
 
         # process to read from pipe 
         self.reader = Process(target=reader,

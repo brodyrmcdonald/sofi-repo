@@ -1,4 +1,5 @@
 from tkinter import *
+import io
 import base64
 import binascii
 import sys
