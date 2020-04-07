@@ -66,11 +66,8 @@ def extractPackets(e,infile):
         if chunk == '':
             closePipe()
         elif len(chunk)!= chunk_size:
-            if len(chunk) < chunk_size:
-                while len(chunk) < chunk_size:
-                    chunk = chunk+"0"
-            else:
-                chunk = chunk[0:16]
+            print('Error: packet has missing bits')
+            break
                 
         header = chunk[0:2]
         scheme = header[0]
@@ -86,13 +83,14 @@ def extractPackets(e,infile):
 
         # if tail bit is set, break and treat last packet as decimal number 
         if header[1] == '1': 
+            
             break 
 
         fullStr = fullStr + data
 
     # convert data segment from last packet to decimal number 
     padLen = int(data,2)
-    fullStr = fullStr[:(-1)*padLen] 
+    fullStr = fullStr[:(-1)*padLen]
 
     # calculate bit error rate 
     bitErrRate = 0.0 
