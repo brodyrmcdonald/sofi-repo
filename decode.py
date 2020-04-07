@@ -1,6 +1,7 @@
 from tkinter import *
 import base64
 import binascii
+import sys
 
 decoding = { 
         "ASCII"  : '0', 
@@ -117,12 +118,15 @@ def extractPackets(e,infile):
     if(scheme == '0'):
         print(final)
     elif (scheme == '1'):
-        b64bytes = final.encode('ascii')
-        msgbytes = base64.b64decode(b64bytes)
-        b64final = msgbytes.decode('ascii')
-        print(b64final)
+        try:
+            b64bytes = final.encode('ascii', 'ignore')
+            msgbytes = base64.b64decode(b64bytes)
+            b64final = msgbytes.decode('ascii')
+            print(b64final)
         #https://stackabuse.com/encoding-and-decoding-base64-strings-in-python/
-    
+        except:
+            e = sys.exc_info()
+            print( "Error! Too many incorrect bits received")
     return final
 
 with open(sys.argv[1], 'r') as fin:
