@@ -65,6 +65,13 @@ def extractPackets(e,infile):
         chunk = infile.read(chunk_size)
         if chunk == '':
             closePipe()
+        elif len(chunk)!= chunk_size:
+            if len(chunk) < chunk_size:
+                while len(chunk) < chunk_size:
+                    chunk = chunk+"0"
+            else:
+                chunk = chunk[0:16]
+                
         header = chunk[0:2]
         scheme = header[0]
         dataSeg = chunk[2:]
