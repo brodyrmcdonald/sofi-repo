@@ -83,8 +83,15 @@ class updatingGUI(Frame):
         # actual text box of current buffer
         self.currentText = Text(self.currentBuffer, height=5, width=64)
         self.currentText.pack()
-        # self.currentText.insert(END, 'Waiting...')
         self.currentText.configure(state='disabled')
+
+        # create send all button and add to frame
+        func=lambda: sendAll(self.editText,self.currentText,outPipe)
+        self.sendAllButton = Button(self.currentBuffer, 
+                                    text='Send All',
+                                    padx=5, 
+                                    command=func)        
+        self.sendAllButton.pack(side=BOTTOM)
 
         # make user edit frame
         self.editFrame = Frame(self,padx=10,pady=10)
@@ -98,13 +105,6 @@ class updatingGUI(Frame):
         self.editText = Text(self.editFrame, height=1, width=61)
         self.editText.pack()
 
-        # create send all button and add to frame
-        func=lambda: sendAll(self.editText,self.currentText,outPipe)
-        self.sendAllButton = Button(self.editFrame, 
-                                    text='Send All',
-                                    padx=5, 
-                                    command=func)        
-        self.sendAllButton.pack(side=LEFT)
 
         # create send packet button and add to frame
         func = lambda: sendPacket(self.editText,self.currentText,outPipe)

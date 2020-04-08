@@ -4,6 +4,7 @@ import base64
 import binascii
 import sys
 import os
+from multiprocessing import Event,Process,Pipe
 
 decoding = { 
         "ASCII"  : '0', 
@@ -88,7 +89,6 @@ def extractPackets(e,inpath):
 
         # if tail bit is set, break and treat last packet as decimal number 
         if header[1] == '1': 
-            
             break 
 
         fullStr = fullStr + data
@@ -136,7 +136,7 @@ def extractPackets(e,inpath):
         #https://stackabuse.com/encoding-and-decoding-base64-strings-in-python/
         except:
             e = sys.exc_info()
-            print( "Error! Too many incorrect bits received")
+            print("Error: unable to decode packet")
     return final
 
 x = ""
