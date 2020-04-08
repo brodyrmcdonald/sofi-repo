@@ -20,15 +20,15 @@ R = 4
 # open file descriptor for fifo 
 path = './' + sys.argv[1]
 try: 
-	os.mkfifo(path)
+    os.mkfifo(path)
 except: 
-	None
+    None
 
 fifo = os.open(path, os.O_RDWR|os.O_NONBLOCK)
 
 
 def posRedundantBits(data, r): 
-  # put a 0 at any bit pos that's a power of 2 
+    # put a 0 at any bit pos that's a power of 2 
   j = 0
   k = 1
   m = len(data) 
@@ -63,7 +63,7 @@ takes a string and an encoding scheme and returns a stream of
 packets 
 '''
 def makePackets(s,e): 
-  # create binary message 
+    # create binary message 
     message = "".join(["{:08b}".format(x) for x in e])
     padLen = DATA_LEN - (len(message)%DATA_LEN)
     for i in range(0,padLen): 

@@ -1,7 +1,11 @@
 #maddie test
 from tkinter import *
+import io
 import base64
 import binascii
+import sys
+import os
+from multiprocessing import Event,Process,Pipe
 
 decoding = { 
         "ASCII"  : '0', 
@@ -49,7 +53,10 @@ def closePipe():
     print('pipe closed') 
     exit(0)
 
-def extractPackets(e,infile):
+def extractPackets(e,inpath):
+    # open fd 
+    infile = os.open(inpath, os.O_RDWR)
+
     chunk_size = 16
     iter = 0
     fullStr=""
@@ -62,12 +69,16 @@ def extractPackets(e,infile):
     errors=0
     numPackets = 0
     while True:
-        chunk = infile.read(chunk_size)
+        chunk = os.read(infile,chunk_size)
         if chunk == '':
             closePipe()
-        header = chunk[0:2]
+        elif len(chunk)!= chunk_size:
+            print('Error: packet has missing bits')
+            continue
+                
+        header = chunk[0:2].decode('ascii')
         scheme = header[0]
-        dataSeg = chunk[2:]
+        dataSeg = chunk[2:].decode('ascii')
         numPackets += 1
 
 
@@ -85,7 +96,7 @@ def extractPackets(e,infile):
 
     # convert data segment from last packet to decimal number 
     padLen = int(data,2)
-    fullStr = fullStr[:(-1)*padLen] 
+    fullStr = fullStr[:(-1)*padLen]
 
     # calculate bit error rate 
     bitErrRate = 0.0 
@@ -118,15 +129,17 @@ def extractPackets(e,infile):
     if(scheme == '0'):
         print(final)
     elif (scheme == '1'):
-        b64bytes = final.encode('ascii')
-        msgbytes = base64.b64decode(b64bytes)
-        b64final = msgbytes.decode('ascii')
-        print(b64final)
+        try:
+            b64bytes = final.encode('ascii', 'ignore')
+            msgbytes = base64.b64decode(b64bytes)
+            b64final = msgbytes.decode('ascii')
+            print(b64final)
         #https://stackabuse.com/encoding-and-decoding-base64-strings-in-python/
-    
+        except:
+            e = sys.exc_info()
+            print("Error: unable to decode packet")
     return final
 
-with open(sys.argv[1], 'r') as fin:
-    x = ""
-    while True:
-        extractPackets(x,fin)
+x = ""
+while True:
+    extractPackets(x,sys.argv[1])
