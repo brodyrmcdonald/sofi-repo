@@ -22,10 +22,12 @@ simulator.py
 System setup: 
 
     This system is based on a series of pipes that communicate between 
-    programs. The encoding module will write to a named pipe encoded messages. 
+    programs. The encoding module will write encoded message to a named pipe. 
     The decoding module will subsequently read from a named pipe the encoded 
-    messages, decode them, and display them on the terminal. Reference the 
-    the below diagram: 
+    messages, decode them, and display them on the terminal. The simulator
+    steps in between the encoding and decoding modules, allowing the user 
+    to modify bits as they are in transmission. This is meant to simulate 
+    noise and error in transmission. Reference the below diagram: 
 
      encody.py --> input pipe --> simulator.py --> output pipe --> decode.py
 
@@ -76,13 +78,16 @@ To run the simulator:
     will read from. This is being written to by the simulator to represent 
     transmission across a medium. 
 
-    At this point there will be two GUI windows. Type a message into the 
-    input box for the encoding module and press go. The encoded message 
-    will now appear in the simulator window as a sequence of bits. Press 
-    the "Send All" button in the window to empty the buffer and write the
-    whole message, or the "Send Packet" button to send just the contents of 
-    the lower text box. Edits can be made to the lower text box to simulate
-    errors in transmission. 
+    At this point there will be two GUI windows. Choose an encoding scheme, 
+    Type a message into the input box for the encoding module and press go. 
+    The encoded message will now appear in the simulator window as a sequence 
+    of bits. Press the "Send All" button in the window to empty the buffer 
+    and write the whole message, or the "Send Packet" button to send just 
+    the contents of the lower text box. Edits can be made to the lower text 
+    box to simulate errors in transmission. Alternatively, there is a "Drop 
+    Packet" button that drops the next packet entirely from the system. The 
+    decoder does not handle this type of error very well, as it has no 
+    visibility on the number of packets that are sent in a transmission. 
 
 ----------------------------------------------------------------------------
 
