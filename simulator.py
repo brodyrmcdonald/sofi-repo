@@ -160,7 +160,7 @@ class updatingGUI(Frame):
             self.editText.insert(END, packet)
 
 
-        self.parent.after(200,self.update)
+        self.parent.after(100,self.update)
 
 def delete(gui): 
     gui.quit()
