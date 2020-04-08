@@ -116,9 +116,7 @@ def getInput():
 
     # write makePackets to fifo
     stream = makePackets(s,e)
-    print('writing to linux pipe')
     os.write(fifo, stream.encode())
-    print('done writing to linux pipe')
 
 
 #make title frame 
