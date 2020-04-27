@@ -63,7 +63,7 @@ To run the simulator:
 
     In the second terminal run the following command: 
 
-        $> python3 simulatorpy in out
+        $> python3 simulator.py in out
 
     The first argument to the simulator is the input pipe to the system. 
     This must match the name of the pipe used to the encoding module above. 

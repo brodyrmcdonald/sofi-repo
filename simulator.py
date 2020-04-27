@@ -49,8 +49,13 @@ def dropPacket(editText,currentText):
     currentText.configure(state='disabled')
 
     editText.delete('1.0',END)
-    
 
+def dropAll(currentText,editText): 
+    currentText.configure(state='normal')
+    currentText.delete('1.0',END)
+    currentText.configure(state='disabled')
+
+    editText.delete('1.0',END)
 
 
 
@@ -77,7 +82,7 @@ class updatingGUI(Frame):
         self.currentBuffer.pack(side=TOP)
 
         # label for current buffer box
-        self.label1 = Label(self.currentBuffer, text='Packets to send')
+        self.label1 = Label(self.currentBuffer, text='Packets to send    ')
         self.label1.pack(side=LEFT)
 
         # actual text box of current buffer
@@ -91,7 +96,15 @@ class updatingGUI(Frame):
                                     text='Send All',
                                     padx=5, 
                                     command=func)        
-        self.sendAllButton.pack(side=BOTTOM)
+        self.sendAllButton.pack(side=LEFT)
+
+        # create drop all button and add to frame 
+        func=lambda: dropAll(self.currentText,self.editText)
+        self.dropAllButton = Button(self.currentBuffer,
+                                    text='Drop All',
+                                    padx=5,
+                                    command=func)
+        self.dropAllButton.pack(side=LEFT)
 
         # make user edit frame
         self.editFrame = Frame(self,padx=10,pady=10)
