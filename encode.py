@@ -119,6 +119,10 @@ def getInput():
     stream = makePackets(s,e)
     os.write(fifo, stream.encode())
 
+def clearInput(): 
+    inputbox.delete(0,END)
+
+
 
 #make title frame 
 topframe = Frame(root) 
@@ -153,8 +157,14 @@ label2.pack(side = LEFT)
 inputbox = Entry(inputframe, width=20)
 inputbox.pack(side = LEFT)
 
+# go button
 go = Button(inputframe, text='Go', padx=5, command=lambda: getInput())
-
 go.pack(side = LEFT)
+
+# clear button 
+clearButton = Button(inputframe, text='Clear', padx=5, 
+                    command=lambda: clearInput())
+clearButton.pack(side=LEFT)
+
 
 root.mainloop()
